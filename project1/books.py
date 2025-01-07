@@ -1,8 +1,7 @@
-from typing import List
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-from fastapi import FastAPI, Path, Query
+from fastapi import FastAPI, Path, Query,HTTPException,status
 
 app = FastAPI()
 
@@ -67,19 +66,20 @@ async def read_all_books():
     return BOOKS
 
 
-@app.post("/books/create_book")
+@app.post("/books/create_book",status_code=status.HTTP_201_CREATED)
 async def create_book(new_book: BookRequest):
     BOOKS.append(get_new_book_id(Book(**new_book.model_dump())))
 
 
-@app.get("/books/{id}")
+@app.get("/books/{id}",status_code=status.HTTP_200_OK)
 async def read_book(id: int = Path(gt=0)):
     for book in BOOKS:
         if book.id == id:
             return book
+    raise HTTPException(404, "Book not found with id {id}".format(id=id))
 
 
-@app.get("/books/by_date/")
+@app.get("/books/by_date/",status_code=status.HTTP_200_OK)
 async def get_book_by_published_date(published_date: str):
     book_to_return = []
     for book in BOOKS:
@@ -96,6 +96,13 @@ async def get_book_by_rating(rating: int = Query(gt=0, lt=len(BOOKS))):
             book_to_return.append(book)
     return book_to_return
 
+@app.put("/books/update_book")
+async def update_book(new_book: BookRequest):
+    for i in range(0, len(BOOKS)):
+        if BOOKS[i].id == new_book.id:
+            BOOKS[i] = new_book
+            return
+    raise HTTPException(404, "Book not found with id {id}".format(id=new_book.id))
 
 @app.delete("/books/{id}")
 async def delete_book(id: int = Path(gt=0)):

@@ -1,0 +1,28 @@
+name: Deploy FastAPI Application
+
+on:
+  push:
+    branches:
+      - main
+      - master  # Trigger on push to main or master branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # Checkout your repository's code
+
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy and restart FastAPI service
+        run: |
+          ssh -o StrictHostKeyChecking=no root@64.227.191.200 << 'EOF'
+            cd /home/opt/backenddevelopment
+            git pull origin master  # Pull the latest code from GitHub
+            sudo systemctl restart fastapi  # Restart the FastAPI service
+          EOF
