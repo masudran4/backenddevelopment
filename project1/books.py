@@ -94,10 +94,12 @@ async def get_book(rating: int = Query(gt=0, lt=len(BOOKS)), author: str = Query
     for book in BOOKS:
         if book.rating >= rating:
             book_to_return.append(book)
+    author_books = []
     if author:
         for book in book_to_return:
-            if book.author != author:
-                del book_to_return[book_to_return.index(book)]
+            if book.author.casefold() == author.casefold():
+                author_books.append(book)
+        return author_books
     return book_to_return
 
 
