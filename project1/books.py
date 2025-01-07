@@ -89,15 +89,15 @@ async def get_book_by_published_date(published_date: str):
 
 
 @app.get("/books/")
-async def get_book(rating: int = Query(gt=0, lt=len(BOOKS)),author: str = Query(min_length=2,default=None)):
+async def get_book(rating: int = Query(gt=0, lt=len(BOOKS)), author: str = Query(min_length=2, default=None)):
     book_to_return = []
     for book in BOOKS:
         if book.rating >= rating:
             book_to_return.append(book)
     if author:
-        for book in BOOKS:
-            if book.author == author:
-                book_to_return.append(book)
+        for book in book_to_return:
+            if book.author != author:
+                del book_to_return[book_to_return.index(book)]
     return book_to_return
 
 
@@ -116,4 +116,4 @@ async def delete_book(id: int = Path(gt=0)):
         if book.id == id:
             BOOKS.remove(book)
             return
-    raise HTTPException(404,detail="Book not found with id {id}".format(id=id))
+    raise HTTPException(404, detail="Book not found with id {id}".format(id=id))
