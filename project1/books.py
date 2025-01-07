@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-from fastapi import FastAPI, Path, Query,HTTPException,status
+from fastapi import FastAPI, Path, Query, HTTPException, status
 
 app = FastAPI()
 
@@ -45,9 +45,9 @@ class BookRequest(BaseModel):
 
 
 BOOKS = [
-    Book(1, "Programming Deep part 1", "Rana", "Very Basic Understanding", 4, "2020-12-12"),
-    Book(2, "Programming Deep part 2", "Rana", "Very Basic Understanding", 5, "2020-12-12"),
-    Book(3, "Programming Deep part 3", "Rana", "Very Basic Understanding", 4, "2020-12-12"),
+    Book(1, "Programming Deep part 1", "alom", "Very Basic Understanding", 4, "2020-12-12"),
+    Book(2, "Programming Deep part 2", "alom", "Very Basic Understanding", 5, "2020-12-12"),
+    Book(3, "Programming Deep part 3", "tayeb", "Very Basic Understanding", 4, "2020-12-12"),
     Book(4, "Programming Deep part 4", "Rana", "Very Basic Understanding", 5, "2020-12-12"),
     Book(5, "Programming Deep part 5", "Rana", "Very Basic Understanding", 4, "2020-12-12")
 ]
@@ -66,12 +66,12 @@ async def read_all_books():
     return BOOKS
 
 
-@app.post("/books/create_book",status_code=status.HTTP_201_CREATED)
+@app.post("/books/create_book", status_code=status.HTTP_201_CREATED)
 async def create_book(new_book: BookRequest):
     BOOKS.append(get_new_book_id(Book(**new_book.model_dump())))
 
 
-@app.get("/books/{id}",status_code=status.HTTP_200_OK)
+@app.get("/books/{id}", status_code=status.HTTP_200_OK)
 async def read_book(id: int = Path(gt=0)):
     for book in BOOKS:
         if book.id == id:
@@ -79,7 +79,7 @@ async def read_book(id: int = Path(gt=0)):
     raise HTTPException(404, "Book not found with id {id}".format(id=id))
 
 
-@app.get("/books/by_date/",status_code=status.HTTP_200_OK)
+@app.get("/books/by_date/", status_code=status.HTTP_200_OK)
 async def get_book_by_published_date(published_date: str):
     book_to_return = []
     for book in BOOKS:
@@ -89,12 +89,17 @@ async def get_book_by_published_date(published_date: str):
 
 
 @app.get("/books/")
-async def get_book_by_rating(rating: int = Query(gt=0, lt=len(BOOKS))):
+async def get_book(rating: int = Query(gt=0, lt=len(BOOKS)),author: str = Query(min_length=2,default=None)):
     book_to_return = []
     for book in BOOKS:
         if book.rating >= rating:
             book_to_return.append(book)
+    if author:
+        for book in BOOKS:
+            if book.author == author:
+                book_to_return.append(book)
     return book_to_return
+
 
 @app.put("/books/update_book")
 async def update_book(new_book: BookRequest):
@@ -104,8 +109,11 @@ async def update_book(new_book: BookRequest):
             return
     raise HTTPException(404, "Book not found with id {id}".format(id=new_book.id))
 
+
 @app.delete("/books/{id}")
 async def delete_book(id: int = Path(gt=0)):
     for book in BOOKS:
         if book.id == id:
             BOOKS.remove(book)
+            return
+    raise HTTPException(404,detail="Book not found with id {id}".format(id=id))
