@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 
 app = FastAPI()
 
@@ -33,13 +33,6 @@ async def get_book(id: int):
             return book
 
 
-# @app.put("/books/{id}")
-# async def update_book(id: int, book_data):
-#     for book in BOOKS:
-#         if id == book['id']:
-#             book['title'] = input("Title: ")
-
-
 @app.get("/books/")
 async def get_books(author: str):
     books_to_return = []
@@ -47,3 +40,38 @@ async def get_books(author: str):
         if book['author'] == author:
             books_to_return.append(book)
     return books_to_return
+
+
+@app.post("/books/create_book")
+async def create_book(new_book=Body()):
+    BOOKS.append(new_book)
+    return {"book_id": new_book['id']}
+
+
+@app.put("/books/update_book/{id}")
+async def update_book(id: int, new_book=Body()):
+    for book in BOOKS:
+        if book['id'] == id:
+            book['title'] = new_book['title']
+            book['author'] = new_book['author']
+            book['category'] = new_book['category']
+            return
+    return {"message": "Book not found"}
+
+
+@app.patch("/books/update_book/{id}")
+def update_book(id: int, new_book=Body()):
+    for index in range(len(BOOKS)):
+        if BOOKS[index]['id'] == id:
+            BOOKS[index]['category'] = new_book['category']
+            return
+    return {"message": "Book not found"}
+
+
+@app.delete("/books/dalete_book/{id}")
+async def delete_book(id: int):
+    for index in range(len(BOOKS)):
+        if BOOKS[index]['id'] == id:
+            del BOOKS[index]
+            return
+    return {"message": "Book not found"}
