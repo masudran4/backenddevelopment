@@ -22,7 +22,7 @@ jobs:
 
       - name: Deploy and restart FastAPI service
         run: |
-          ssh -o StrictHostKeyChecking=no root@64.227.191.200 << 'EOF'
+          ssh -v -o StrictHostKeyChecking=no root@64.227.191.200 << 'EOF'
             cd /home/opt/backenddevelopment
             git pull origin master  # Pull the latest code from GitHub
             sudo systemctl restart fastapi  # Restart the FastAPI service
