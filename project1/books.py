@@ -1,121 +1,80 @@
+from typing import Annotated
 from pydantic import BaseModel, Field
-from datetime import datetime
+from fastapi import FastAPI, Depends, HTTPException, Path
+from starlette import status
 
-from fastapi import FastAPI, Path, Query, HTTPException, status
+from project1.database import engine, Session as SessionMaker
+import models
+from models import Todos
+from sqlalchemy.orm import Session
 
 app = FastAPI()
+models.Base.metadata.create_all(engine)
 
 
-class Book:
-    id: int
-    title: str
-    author: str
-    description: str
-    rating: int
-    published_data: str
-
-    def __init__(self, id, title, author, description, rating, published_date):
-        self.id = id
-        self.title = title
-        self.author = author
-        self.description = description
-        self.rating = rating
-        self.published_date = published_date
-
-
-class BookRequest(BaseModel):
-    id: int = Field(default=None)
+class TodoReq(BaseModel):
     title: str = Field(min_length=3)
-    author: str = Field(min_length=3)
     description: str = Field(min_length=3)
-    rating: int = Field(gt=0, lt=6, default=1)
-    published_date: str = Field(min_length=10)
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "title": "Book title",
-                "author": "Book author",
-                "description": "Book description",
-                "rating": 5,
-                "published_date": "2024-12-12"
-            }
-        }
-    }
+    completed: bool = Field(default=False)
+    priority: int = Field(default=0)
 
 
-BOOKS = [
-    Book(1, "Programming Deep part 1", "alom", "Very Basic Understanding", 4, "2020-12-12"),
-    Book(2, "Programming Deep part 2", "alom", "Very Basic Understanding", 5, "2020-12-12"),
-    Book(3, "Programming Deep part 3", "tayeb", "Very Basic Understanding", 4, "2020-12-12"),
-    Book(4, "Programming Deep part 4", "Rana", "Very Basic Understanding", 5, "2020-12-12"),
-    Book(5, "Programming Deep part 5", "Rana", "Very Basic Understanding", 4, "2020-12-12")
-]
+def get_db():
+    db = SessionMaker()
+    try:
+        print("Yielding db session")
+        yield db
+    finally:
+        print("Closing db session")
+        db.close()
 
 
-def get_new_book_id(book):
-    if len(BOOKS) == 0:
-        book.id = 1
+db_dependency = Annotated[Session, Depends(get_db)]
+
+
+@app.get("/", status_code=status.HTTP_200_OK)
+async def get_all_record(db: db_dependency):
+    print("started quering the db!")
+    return db.query(Todos).limit(20).all()
+
+
+@app.get("/todo/{todo_id}", status_code=status.HTTP_200_OK)
+async def get_record(db: db_dependency, todo_id: int = Path(gt=0)):
+    todo_model = db.query(Todos).filter(Todos.id == todo_id).first()
+    if todo_model:
+        return todo_model
+    raise HTTPException(status_code=404, detail="Todo not found")
+
+
+@app.post("/todo/create", status_code=status.HTTP_201_CREATED)
+async def create_record(db: db_dependency, new_todo: TodoReq):
+    item = Todos(**new_todo.model_dump())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"todo_id": item.id}
+
+
+@app.put("/todo/{todo_id}", status_code=status.HTTP_202_ACCEPTED)
+async def update_record(db: db_dependency, new_todo: TodoReq, todo_id: int = Path(gt=0)):
+    item = db.query(Todos).filter(Todos.id == todo_id).first()
+    if item:
+        item.title = new_todo.title
+        item.description = new_todo.description
+        item.completed = new_todo.completed
+        item.priority = new_todo.priority
+        db.add(item)
+        db.commit()
+        return {"todo_id": item.id}
     else:
-        book.id = BOOKS[-1].id + 1
-    return book
+        raise HTTPException(status_code=404, detail="Todo not found")
 
 
-@app.get("/books")
-async def read_all_books():
-    return BOOKS
-
-
-@app.post("/books/create_book", status_code=status.HTTP_201_CREATED)
-async def create_book(new_book: BookRequest):
-    BOOKS.append(get_new_book_id(Book(**new_book.model_dump())))
-
-
-@app.get("/books/{id}", status_code=status.HTTP_200_OK)
-async def read_book(id: int = Path(gt=0)):
-    for book in BOOKS:
-        if book.id == id:
-            return book
-    raise HTTPException(404, "Book not found with id {id}".format(id=id))
-
-
-@app.get("/books/by_date/", status_code=status.HTTP_200_OK)
-async def get_book_by_published_date(published_date: str):
-    book_to_return = []
-    for book in BOOKS:
-        if datetime.strptime(book.published_date, '%Y-%m-%d') >= datetime.strptime(published_date, '%Y-%m-%d'):
-            book_to_return.append(book)
-    return book_to_return
-
-
-@app.get("/books/")
-async def get_book(rating: int = Query(gt=0, lt=len(BOOKS)), author: str = Query(min_length=2, default=None)):
-    book_to_return = []
-    for book in BOOKS:
-        if book.rating >= rating:
-            book_to_return.append(book)
-    author_books = []
-    if author:
-        for book in book_to_return:
-            if book.author.casefold() == author.casefold():
-                author_books.append(book)
-        return author_books
-    return book_to_return
-
-
-@app.put("/books/update_book")
-async def update_book(new_book: BookRequest):
-    for i in range(0, len(BOOKS)):
-        if BOOKS[i].id == new_book.id:
-            BOOKS[i] = new_book
-            return
-    raise HTTPException(404, "Book not found with id {id}".format(id=new_book.id))
-
-
-@app.delete("/books/{id}")
-async def delete_book(id: int = Path(gt=0)):
-    for book in BOOKS:
-        if book.id == id:
-            BOOKS.remove(book)
-            return
-    raise HTTPException(404, detail="Book not found with id {id}".format(id=id))
+@app.delete("/todo/{todo_id}", status_code=status.HTTP_202_ACCEPTED)
+async def delete_record(db: db_dependency, todo_id: int = Path(gt=0)):
+    item = db.query(Todos).filter(Todos.id == todo_id).first()
+    if item:
+        db.delete(item)
+        db.commit()
+    else:
+        raise HTTPException(status_code=404, detail="Todo not found")
