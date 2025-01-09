@@ -1,16 +1,14 @@
 from typing import Annotated
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path
 from starlette import status
-
-from database import engine, Session as SessionMaker
-import models
-from models import Todos
+from .database import engine, Session as SessionMaker
+from . import models
+from .models import Todos
 from sqlalchemy.orm import Session
+router = APIRouter()
 
-app = FastAPI()
-models.Base.metadata.create_all(engine)
-
+models.Base.metadata.create_all(bind=engine)
 
 class TodoReq(BaseModel):
     title: str = Field(min_length=3)
@@ -32,13 +30,13 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
-@app.get("/", status_code=status.HTTP_200_OK)
+@router.get("/", status_code=status.HTTP_200_OK)
 async def get_all_record(db: db_dependency):
     print("started quering the db!")
     return db.query(Todos).limit(20).all()
 
 
-@app.get("/todo/{todo_id}", status_code=status.HTTP_200_OK)
+@router.get("/todo/{todo_id}", status_code=status.HTTP_200_OK)
 async def get_record(db: db_dependency, todo_id: int = Path(gt=0)):
     todo_model = db.query(Todos).filter(Todos.id == todo_id).first()
     if todo_model:
@@ -46,7 +44,7 @@ async def get_record(db: db_dependency, todo_id: int = Path(gt=0)):
     raise HTTPException(status_code=404, detail="Todo not found")
 
 
-@app.post("/todo/create", status_code=status.HTTP_201_CREATED)
+@router.post("/todo/create", status_code=status.HTTP_201_CREATED)
 async def create_record(db: db_dependency, new_todo: TodoReq):
     item = Todos(**new_todo.model_dump())
     db.add(item)
@@ -55,7 +53,7 @@ async def create_record(db: db_dependency, new_todo: TodoReq):
     return {"todo_id": item.id}
 
 
-@app.put("/todo/{todo_id}", status_code=status.HTTP_202_ACCEPTED)
+@router.put("/todo/{todo_id}", status_code=status.HTTP_202_ACCEPTED)
 async def update_record(db: db_dependency, new_todo: TodoReq, todo_id: int = Path(gt=0)):
     item = db.query(Todos).filter(Todos.id == todo_id).first()
     if item:
@@ -70,11 +68,12 @@ async def update_record(db: db_dependency, new_todo: TodoReq, todo_id: int = Pat
         raise HTTPException(status_code=404, detail="Todo not found")
 
 
-@app.delete("/todo/{todo_id}", status_code=status.HTTP_202_ACCEPTED)
+@router.delete("/todo/{todo_id}", status_code=status.HTTP_202_ACCEPTED)
 async def delete_record(db: db_dependency, todo_id: int = Path(gt=0)):
     item = db.query(Todos).filter(Todos.id == todo_id).first()
     if item:
         db.delete(item)
         db.commit()
+        return {"info":"Successfully deleted"}
     else:
         raise HTTPException(status_code=404, detail="Todo not found")
