@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from fastapi import FastAPI, Depends, HTTPException, Path
 from starlette import status
 
-from project1.database import engine, Session as SessionMaker
+from database import engine, Session as SessionMaker
 import models
 from models import Todos
 from sqlalchemy.orm import Session
