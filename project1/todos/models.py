@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean
-from .database import Base
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from database import Base
 
 
 class Todos(Base):
@@ -9,3 +9,4 @@ class Todos(Base):
     description = Column(String, nullable=False)
     priority = Column(Integer, nullable=False, default=0)
     completed = Column(Boolean, nullable=False, default=False)
+    owner = Column(Integer,ForeignKey('users.id'),nullable=False)
