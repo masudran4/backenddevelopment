@@ -8,6 +8,9 @@ from passlib.context import CryptContext
 from jose import jwt
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
+if SECRET_KEY is None:
+    raise ValueError("SECRET_KEY environment variable not set")
+
 ALGORITHM = "HS256"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
