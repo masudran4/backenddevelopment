@@ -24,6 +24,6 @@ jobs:
         run: |
           ssh -v -o StrictHostKeyChecking=no root@64.227.191.200 << 'EOF'
             cd /home/opt/backenddevelopment
-            git pull origin master  # Pull the latest code from GitHub
+            git reset --hard HEAD && git pull origin master  # Pull the latest code from GitHub
             sudo systemctl restart fastapi  # Restart the FastAPI service
           EOF

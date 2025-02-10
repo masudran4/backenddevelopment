@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from auths.helper import get_user_by_token
+
 SQLALCHEMY_DATABASE_URL = 'sqlite:///todo.db'
 
 Base = declarative_base()
@@ -23,4 +24,4 @@ def get_db():
 
 
 db_dependency = Annotated[Session, Depends(get_db)]
-auth_dependency = Annotated[dict,Depends(get_user_by_token)]
+auth_dependency = Annotated[dict, Depends(get_user_by_token)]

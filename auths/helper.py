@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from datetime import timedelta, timezone, datetime
 from typing import Annotated
 
@@ -7,6 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import jwt
 
+load_dotenv()
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if SECRET_KEY is None:
     raise ValueError("SECRET_KEY environment variable not set")
