@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey,String
 
 from database import Base
 
 
 class Followers(Base):
-    __tablename__ = 'fan_followers'
+    __tablename__ = 'followers'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    follower_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    follower_username = Column(String, ForeignKey('users.username'), nullable=False)
+    following_username = Column(String, ForeignKey('users.username'), nullable=False)

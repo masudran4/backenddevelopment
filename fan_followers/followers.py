@@ -13,13 +13,13 @@ router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
 
 
-@router.post('/follow/{user_id}', status_code=status.HTTP_201_CREATED)
-async def follow(user_id: int, db: db_dependency, user: auth_dependency):
-    data = {'user_id': user_id, 'follower_id': user.get('id')}
-    following_user = db.query(User).filter(User.id == user_id).first()
-    already_followed = db.query(Followers).filter(Followers.user_id == user_id,
-                                                  Followers.follower_id == user.get('id')).first()
-    if user_id == user.get('id'):
+@router.post('/follow/{username}', status_code=status.HTTP_201_CREATED)
+async def follow(username: str, db: db_dependency, user: auth_dependency):
+    following_user = db.query(User).filter(User.username == username).first()
+    data = {"follower_username": user.get('username'), "following_username": username}
+    already_followed = db.query(Followers).filter(Followers.follower_username == user.get('username'),
+                                                  Followers.following_username == username).first()
+    if username == user.get('username'):
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail='Can not follow yourself')
     if already_followed:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User is already followed')
@@ -35,13 +35,13 @@ async def follow(user_id: int, db: db_dependency, user: auth_dependency):
 
 @router.get("/followed", status_code=status.HTTP_200_OK, response_model=None)
 async def get_followed_users(user: auth_dependency, db: db_dependency):
-    followed_users = db.query(Followers).filter(Followers.follower_id == user.get('id')).all()
-    user_ids = [{"user_id": user.user_id} for user in followed_users]
+    followed_users = db.query(Followers).filter(Followers.follower_username == user.get('username')).all()
+    user_ids = [{"user_id": user.following_username} for user in followed_users]
     return user_ids
 
 
 @router.get("/followers", status_code=status.HTTP_200_OK, response_model=None)
 async def get_followers(user: auth_dependency, db: db_dependency):
-    followed_users = db.query(Followers).filter(Followers.user_id == user.get('id')).all()
-    user_ids = [{"user_id": user.follower_id} for user in followed_users]
+    followed_users = db.query(Followers).filter(Followers.following_username == user.get('username')).all()
+    user_ids = [{"username": user.follower_username} for user in followed_users]
     return user_ids
