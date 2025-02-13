@@ -1,3 +1,5 @@
 .env
 todo.db
 *.xml
+alembic.ini
+*.pyc

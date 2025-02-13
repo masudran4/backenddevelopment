@@ -17,7 +17,7 @@ models.Base.metadata.create_all(bind=engine)
 
 class UsersReq(BaseModel):
     username: str = Field(min_length=3, max_length=50)
-    password: str = Field(min_length=8, max_length=50)
+    password: str = Field(min_length=8, max_length=20)
     email: str = Field(min_length=3, max_length=20)
     role: str = Field(min_length=3, max_length=10)
     active: bool = Field(default=True)
@@ -29,7 +29,7 @@ async def create_user(new_user: UsersReq, db: db_dependency):
         username=new_user.username,
         email=new_user.email,
         role=new_user.role,
-        is_active=new_user.active,
+        is_active=1 if new_user.active == 'true' else 0,
         hashed_password=hasher.hash(new_user.password)
     )
     db.add(new_user)
