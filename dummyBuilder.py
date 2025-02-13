@@ -2,6 +2,9 @@ import requests
 from faker import Faker
 import random
 
+URL = 'http://64.227.191.200'
+
+
 # Initialize Faker instance
 
 def add_todos():
@@ -42,17 +45,19 @@ def create_user():
         username = fake.user_name()
         password = "user12345"
         json_data = {
-              "username": username,
-              "password": "admin1234",
-              "email": email,
-              "role": "user",
-              "active": True
-                    }
-        response = requests.post('http://127.0.0.1:8000/auth/create_user',json=json_data)
+            "username": username,
+            "password": "admin1234",
+            "email": email,
+            "role": "user",
+            "active": True
+        }
+        response = requests.post('http://127.0.0.1:8000/auth/create_user', json=json_data)
         print(response.status_code)
         # Output the response
         print(response.json())
-create_user()
+
+
+# create_user()
 
 
 def follow_user():
@@ -158,3 +163,35 @@ def follow_user():
     "mercadovictor"
     :return:
     """
+
+
+def follow_everybody_everyone():
+    response = requests.get('/auth/get_users')
+    usernames = response.json()['usernames']
+    for username in usernames:
+        data = {
+            'grant_type': '',
+            'username': username,
+            'password': 'admin1234',
+            'scope': '',
+            'client_id': '',
+            'client_secret': '',
+        }
+        get_token = requests.post(URL + '/auth/token', data=data).json()['access_token']
+        headers = {
+            'accept': 'application/json',
+            'Authorization': f'Bearer {get_token}',
+            'Content-Type': 'application/json',
+        }
+        for username in usernames:
+            json_data = {
+                "username": username
+            }
+            # Make the POST request
+            response = requests.post(URL + "/follow", headers=headers, json=json_data)
+            print(response.status_code)
+            # Output the response
+            # print(response.json())
+
+
+follow_everybody_everyone()

@@ -46,3 +46,9 @@ async def get_token(user_credentials: Annotated[OAuth2PasswordRequestForm, Depen
     if not verify_password(user_credentials.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username or password')
     return {"access_token": create_access_token(user.username, user.id, timedelta(minutes=30))}
+
+
+@router.get("/get_users")
+async def get_users(db: db_dependency):
+    users = db.query(User).all()
+    return {'usernames': [user.username for user in users]}

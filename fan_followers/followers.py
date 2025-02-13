@@ -13,8 +13,12 @@ router = APIRouter()
 models.Base.metadata.create_all(bind=engine)
 
 
-@router.post('/follow/{username}', status_code=status.HTTP_201_CREATED)
-async def follow(username: str, db: db_dependency, user: auth_dependency):
+class Username(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+
+@router.post('/follow', status_code=status.HTTP_201_CREATED)
+async def follow(username: Username, db: db_dependency, user: auth_dependency):
+    username = username.model_dump().get('username')
     following_user = db.query(User).filter(User.username == username).first()
     data = {"follower_username": user.get('username'), "following_username": username}
     already_followed = db.query(Followers).filter(Followers.follower_username == user.get('username'),
