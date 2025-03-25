@@ -166,9 +166,9 @@ def follow_user():
 
 
 def follow_everybody_everyone():
-    response = requests.get('/auth/get_users')
+    response = requests.get(URL+'/auth/get_users')
     usernames = response.json()['usernames']
-    for username in usernames:
+    for username in usernames[::-1]:
         data = {
             'grant_type': '',
             'username': username,
@@ -183,15 +183,19 @@ def follow_everybody_everyone():
             'Authorization': f'Bearer {get_token}',
             'Content-Type': 'application/json',
         }
-        for username in usernames:
+        count = 0
+        while True and count < 500:
+            user = random.choice(usernames)
             json_data = {
-                "username": username
+                "username": user
             }
+            print(json_data)
             # Make the POST request
             response = requests.post(URL + "/follow", headers=headers, json=json_data)
             print(response.status_code)
             # Output the response
             # print(response.json())
+
 
 
 follow_everybody_everyone()
